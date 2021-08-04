@@ -1,62 +1,83 @@
-import { BaseEntity, BeforeInsert, Column, CreateDateColumn, Entity, Generated, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm"
-import { v4 as uuid } from "uuid" 
-import bcrypt from "bcrypt"
-import { createHmac } from "crypto"
+import {
+  BaseEntity,
+  BeforeInsert,
+  BeforeUpdate,
+  Column,
+  CreateDateColumn,
+  Entity,
+  Index,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from "typeorm";
+import { v4 as uuid } from "uuid";
+import { createHmac } from "crypto";
 
-@Entity('user')
+@Entity("user")
 export class User extends BaseEntity {
+  @PrimaryGeneratedColumn()
+  id!: number;
 
-    @PrimaryGeneratedColumn()
-    id!: number
+  @Column({
+    nullable: false,
+  })
+  first_name!: string;
 
-    
-    @Column({
-        nullable: false
-    })
-    first_name!: string
+  @Column()
+  last_name!: string;
 
-    @Column()
-    last_name!: string
+  @Column({
+    unique: true,
+    nullable: false,
+  })
+  @Index({ unique: true })
+  email!: string;
 
-    @Column({
-       unique: true,
-       nullable: false
-    })
-    email!: string
+  @Column({
+    type: "uuid",
+  })
+  salt!: string;
 
-    
-     @Column()
-    encrypted_password!: string
-
-    @Generated("uuid")
-    salt! : string
-
-    @Column()
-  passwordUsingBcrypt!: string;
-
-    @Column()
-  passwordUsingCrypto!: string;
+  @Column()
+  encry_password!: string;
 
   @BeforeInsert()
-  async generatePasswordHash(): Promise<void> {
-    console.log('GENERATE');
-    this.passwordUsingBcrypt = await bcrypt.hashSync(this.passwordUsingBcrypt, bcrypt.genSaltSync(10));
-   
-    }
-    @BeforeInsert()
-    async generatePasswordCrypto(): Promise<void> {
-      console.log('GENERATE');
-      const secret = "abcdefg"
-      this.passwordUsingCrypto = await  createHmac('sha256', secret)
-               .update(this.passwordUsingCrypto)
-               .digest('hex'); 
-    }
-    
-     @CreateDateColumn()
-    create_at!: Date 
-    
-    @UpdateDateColumn()
-    updated_at!: Date
+  @BeforeUpdate()
+  async generatePasswordCrypto(): Promise<void> {
+    console.log("GENERATE");
+    this.encry_password = this.securePassword(this.encry_password);
+  }
 
-    
+  authenticatePassword = (plainPassword: string) => {
+    return this.matchingPassowrd(plainPassword) === this.encry_password;
+  };
+
+  matchingPassowrd = (plainpassword: string) => {
+    if (!plainpassword) return "";
+    try {
+      return createHmac("sha256", this.salt)
+        .update(plainpassword)
+        .digest("hex");
+    } catch (error) {
+      return "";
+    }
+  };
+
+  securePassword = (plainpassword: string) => {
+    if (!plainpassword) return "";
+    try {
+      this.salt = uuid();
+
+      return createHmac("sha256", this.salt)
+        .update(plainpassword)
+        .digest("hex");
+    } catch (error) {
+      return "";
+    }
+  };
+
+  @CreateDateColumn()
+  create_at!: Date;
+
+  @UpdateDateColumn()
+  updated_at!: Date;
 }
