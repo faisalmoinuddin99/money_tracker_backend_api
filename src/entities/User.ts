@@ -5,7 +5,6 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  Index,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from "typeorm";
@@ -29,7 +28,6 @@ export class User extends BaseEntity {
     unique: true,
     nullable: false,
   })
-  @Index({ unique: true })
   email!: string;
 
   @Column({
