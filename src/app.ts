@@ -1,10 +1,15 @@
 require("dotenv").config();
 import express from "express";
 import { createConnection } from "typeorm";
-import { User } from "./entities/User";
+import { User } from "./models/User";
 import bodyParser from "body-parser";
-import { createSignUpRouter } from "./routes/signup";
-import { createSignInRouter } from "./routes/signin";
+import cookieParser from "cookie-parser";
+import { Season } from "./models/Season";
+import { Episode } from "./models/Episode";
+import { insertSeasons } from "./routes/season";
+import { insertEpisodes } from "./routes/episode";
+import { fetchEpisodeRouter } from "./routes/fetch_episodes";
+import { signinRoute, signupRoute } from "./routes/auth";
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -26,15 +31,20 @@ const main = async () => {
       port: converted_dbPort,
       password: db_password,
       database: db_database,
-      entities: [User],
+      entities: [User, Season, Episode],
       synchronize: true,
     });
     console.log("connected to mysql database successfully...");
 
     app.use(bodyParser.json());
+    app.use(cookieParser());
 
-    app.use(createSignUpRouter);
-    app.use(createSignInRouter);
+    app.use(signupRoute);
+    app.use(signinRoute);
+    app.use(insertSeasons);
+    app.use(insertEpisodes);
+    app.use(fetchEpisodeRouter);
+
     app.listen(port, () => {
       console.log(`server is running at ${port} port...`);
     });

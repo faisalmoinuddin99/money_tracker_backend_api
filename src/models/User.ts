@@ -41,7 +41,6 @@ export class User extends BaseEntity {
   @BeforeInsert()
   @BeforeUpdate()
   async generatePasswordCrypto(): Promise<void> {
-    console.log("GENERATE");
     this.encry_password = this.securePassword(this.encry_password);
   }
 
